@@ -1,0 +1,76 @@
+---
+title: "Harvard Course Enrollment Data - Spring 2019"
+author: "Albert Shin"
+date: "4/10/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE, echo=FALSE, message=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(readxl)
+library(janitor)
+library(lubridate)
+library(knitr)
+library(ggridges)
+library(viridis)
+library(sbgr)
+```
+
+```{r madlibs, message=FALSE, echo=FALSE, include=FALSE}
+download.file(url = "https://registrar.fas.harvard.edu/files/fas-registrar/files/class_enrollment_summary_by_term_3.22.19.xlsx", destfile = "enrollment.xlsx")
+
+enrollment = read_excel("enrollment.xlsx", skip = 3)
+
+file_delete("enrollment.xlsx")
+
+# created clean_enrollment from enrollment by cleaning up the data. 
+clean_enrollment <- enrollment %>% 
+# clean names using the clean_names() function from the janitor package in order to clean the table names.
+  clean_names() %>% 
+# Takes out NA values in course section code
+  filter(!is.na(course_section_code)) %>% 
+# only select classes/filter for classes that have more than 5 undergraduate students
+  filter(u_grad > 5) %>% 
+# filter for classes where undergrads are the majority, i.e., undergrads must make up 50% or more of the class.
+# this can be achieved by multiplying u_grad by 2, as if undergrads are the majority (they make up at least half 
+# of the class), then doubling the number of undergrads should be greater than the total number of students enrolled. 
+  filter(u_grad*2 > total)
+```
+
+```{r enrollments, echo=FALSE, message=FALSE}
+clean_enrollment %>% 
+# selected course_department, because the y-axis has different course departments, and u_grad, because
+  #we are plotting the amount of undergraduate enrollment in courses in spring 2019. As a result, we do 
+  #not use total, because that also incorporates graduate students and other non-undergrad students. 
+  select(course_department, u_grad) %>%
+# filtered for specific course departments used in the graph using concatenate and %in%
+  filter(course_department %in% c("Statistics", "Mathematics", "Government", "Expository Writing", 
+                                  "Economics", "Computer Science")) %>%
+# ggplot; put u_grad on the x-axis because we are looking at course enrollments on the x axis, and u_grad
+# is the undergraduate enrollment for each of the courses in the departments. course_department
+# is on the y-axis because we are plotting the various course departments in the graph.
+  ggplot(aes(x = u_grad, y = course_department)) + 
+# used scale_fill_viridis (which is part of the viridis package) in order to fill the graph with a color.
+# the color used in the original graph is "plasma", found by going to the viridis color palette website. 
+  scale_fill_viridis(option="plasma") +
+# Used geom_demsity_ridges_gradient is used because this specific geom allows fill to be different across the
+# x-axis, which is what we are looking for. show.legend = FALSE in order to hide the lenge,d and aes(fill = ..x..)
+# creates a colored gradient fill on the density plot. If points have the same value, 
+  geom_density_ridges_gradient(aes(fill = ..x..), show.legend = FALSE) +
+# When looking at the original graph, the x-axis is on a log10 scale, so trans = 'log10' transforms
+# the scale to a log 10 scale. trans_breaks provides breaks on the log10 scale, using the function 10^x,
+# which is an exponential function. The values it takes are from 1 to 1e3, which is equal to 1000. 
+  scale_x_log10() +
+# titling, subtitling, and captioning the graph per the original graph.
+  labs(title = "Harvard Course Enrollments Spring 2019", 
+       subtitle = "Departments vary in their typical class sizes",
+       caption = "Source: Harvard Registrar") + 
+# Again, because the x-axis is class size, the label is Class Size, which looks a lot better than 
+# the format of the variable u_grad.
+  xlab("Class Size") +
+# There is no y-axis label.
+  ylab(NULL)
+```
+
+Collaborators: Evelyn Cai
