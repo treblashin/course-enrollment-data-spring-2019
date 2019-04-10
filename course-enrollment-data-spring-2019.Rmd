@@ -14,15 +14,12 @@ library(lubridate)
 library(knitr)
 library(ggridges)
 library(viridis)
-library(sbgr)
 ```
 
 ```{r madlibs, message=FALSE, echo=FALSE, include=FALSE}
 download.file(url = "https://registrar.fas.harvard.edu/files/fas-registrar/files/class_enrollment_summary_by_term_3.22.19.xlsx", destfile = "enrollment.xlsx")
 
 enrollment = read_excel("enrollment.xlsx", skip = 3)
-
-file_delete("enrollment.xlsx")
 
 # created clean_enrollment from enrollment by cleaning up the data. 
 clean_enrollment <- enrollment %>% 
